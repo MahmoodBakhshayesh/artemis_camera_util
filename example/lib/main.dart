@@ -1,5 +1,9 @@
+import 'dart:convert';
+import 'dart:developer';
+
+import 'package:artemis_camera_kit/ArtemisCameraKitView.dart';
 import 'package:artemis_camera_kit/artemis_camera_kit_platform_interface.dart';
-import 'package:artemis_camera_kit_example/ArtemisCameraKitView.dart';
+// import 'package:artemis_camera_kit_example/ArtemisCameraKitView.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -102,9 +106,10 @@ class _MyAppState extends State<MyApp> {
                   TextButton(
                       onPressed: () {
                         _artemisCameraKitPlugin.takePicture().then((imgPath){
+                          log(imgPath.toString());
                           if(imgPath!=null) {
                             _artemisCameraKitPlugin.processImageFromPath(imgPath).then((value) {
-                                print(value?.toJson());
+                              log(jsonEncode(value?.toJson()));
                             });
                           }
                         });
@@ -112,7 +117,7 @@ class _MyAppState extends State<MyApp> {
                       child: const Text("Take Pic")),
                 ],
               ),
-              const Expanded(child: ArtemisCameraKitView())
+              const Expanded(child:  ArtemisCameraKitView())
             ],
           ),
         ),

@@ -1,3 +1,5 @@
+import 'package:artemis_camera_kit/ArtemisCameraKitView.dart';
+
 import 'artemis_camera_kit_platform_interface.dart';
 
 class ArtemisCameraKit {
@@ -40,3 +42,4 @@ class ArtemisCameraKit {
     return ArtemisCameraKitPlatform.instance.processImageFromPath(path);
   }
 }
+
