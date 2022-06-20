@@ -14,6 +14,9 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
+import android.net.Uri;
+import android.os.Build;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
@@ -31,32 +34,41 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Preview;
-import androidx.camera.core.UseCaseGroup;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 
+import com.example.artemis_camera_kit.Model.CornerPointModel;
+import com.example.artemis_camera_kit.Model.LineModel;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.gson.Gson;
 import com.google.mlkit.vision.barcode.BarcodeScanner;
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
 import com.google.mlkit.vision.barcode.BarcodeScanning;
 import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.text.Text;
+import com.google.mlkit.vision.text.TextRecognition;
+import com.google.mlkit.vision.text.TextRecognizer;
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.platform.PlatformView;
 
 import static android.content.ContentValues.TAG;
@@ -90,7 +102,6 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
     private Size optimalPreviewSize;
 
     public CameraView(ActivityPluginBinding activityPluginBinding, BinaryMessenger binaryMessenger, int viewId) {
-//    channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "artemis_camera_kit");
         this.activityPluginBinding = activityPluginBinding;
         this.channel = new MethodChannel(binaryMessenger, "artemis_camera_kit");
         this.channel.setMethodCallHandler(this);
@@ -110,6 +121,7 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
         return linearLayout;
     }
 
+
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
         switch (call.method) {
@@ -117,9 +129,7 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
                 result.success("Android" + android.os.Build.VERSION.RELEASE);
                 break;
             case "getCameraPermission":
-//            char flashMode = call.argument("flashMode").toString().charAt(0);
-                boolean permission = getCameraPermission();
-                result.success(permission);
+                getCameraPermission(result);
                 break;
             case "initCamera":
                 int initFlashModeID = call.argument("initFlashModeID");
@@ -144,8 +154,12 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
                 resumeCamera();
                 break;
             case "takePicture":
-                String path = call.argument("path").toString();
+                String path = call.argument("path");
                 takePicture(path, result);
+                break;
+            case "processImageFromPath":
+                String imgPath = call.argument("path");
+                processImageFromPath(imgPath, result);
                 break;
             case "dispose":
                 dispose();
@@ -157,43 +171,28 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
     }
 
 
-    private boolean getCameraPermission() {
+
+    private void getCameraPermission(MethodChannel.Result result) {
         Log.println(Log.INFO, "ArtemisCameraUtil", "GettingCameraPermission");
         final int REQUEST_CAMERA_PERMISSION = 10001;
-
         if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
-            activityPluginBinding.addRequestPermissionsResultListener(new PluginRegistry.RequestPermissionsResultListener() {
-                @Override
-                public boolean onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-                    for (int i :
-                            grantResults) {
-                        if (i == PackageManager.PERMISSION_DENIED) {
-                            try {
-//                                result.success(false);
-                                return true;
-                            } catch (Exception e) {
-                                return false;
-                            }
+            activityPluginBinding.addRequestPermissionsResultListener((requestCode, permissions, grantResults) -> {
+                for (int i : grantResults) {
+                    if (i == PackageManager.PERMISSION_DENIED) {
+                        try {
+                            result.success(false);
+                        } catch (Exception e) {
+                            result.error("-1", e.getMessage(), e);
                         }
                     }
-                    try {
-//                        result.success(true);
-                        return true;
-                    } catch (Exception e) {
-                        return false;
-                    }
-//                    return false;
                 }
-            });
-            return false;
-        } else {
-            try {
-//                result.success(true);
-                return true;
-            } catch (Exception e) {
+                result.success(true);
                 return false;
-            }
+            });
+
+        } else {
+                result.success(true);
         }
     }
 
@@ -217,12 +216,16 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
         }
         try {
             displaySize = new Point();
-            activity.getWindowManager().getDefaultDisplay().getSize(displaySize);
+            DisplayMetrics displaymetrics = new DisplayMetrics();
+            displaymetrics = context.getResources().getDisplayMetrics();
+            int screenWidth = displaymetrics.widthPixels;
+            int screenHeight = displaymetrics.heightPixels;
+            displaySize.x = screenWidth;
+            displaySize.y = screenHeight;
+//            activity.getWindowManager().getDefaultDisplay().getSize(displaySize);
             if (fill) linearLayout.setLayoutParams(new FrameLayout.LayoutParams(displaySize.x, displaySize.y));
-
             previewView = new PreviewView(activity);
             previewView.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-
             previewView.setImplementationMode(PreviewView.ImplementationMode.COMPATIBLE);
             linearLayout.addView(previewView);
 
@@ -268,10 +271,10 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
 
         preview.setSurfaceProvider(previewView.getSurfaceProvider());
 
-        @SuppressLint("UnsafeOptInUsageError") UseCaseGroup useCaseGroup = new UseCaseGroup.Builder()
-                .addUseCase(preview)
-                .addUseCase(imageCapture)//use this case if you want take picture or videoCapture for videoRecording
-                .build();
+//        @SuppressLint("UnsafeOptInUsageError") UseCaseGroup useCaseGroup = new UseCaseGroup.Builder()
+//                .addUseCase(preview)
+//                .addUseCase(imageCapture)//use this case if you want take picture or videoCapture for videoRecording
+//                .build();
 
         if (hasBarcodeReader) {
             camera = cameraProvider.bindToLifecycle((LifecycleOwner) activity, cameraSelector, preview, imageAnalyzer, imageCapture);
@@ -293,7 +296,7 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
 
                 // We don't use a front facing camera in this sample.
                 Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
-                Boolean available = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+//                Boolean available = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
                 if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
                     if (selectedCameraID == 0)
                         continue;
@@ -310,8 +313,9 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
 
                 // Find out if we need to swap dimension to get the preview size relative to sensor
                 // coordinate.
-                int displayRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
-                //noinspection ConstantConditions
+//                int displayRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+                int displayRotation = activity.getResources().getConfiguration().orientation;
+
                 Integer sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
                 boolean swappedDimensions = false;
                 switch (displayRotation) {
@@ -483,8 +487,7 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
 
     @Override
     public void onBarcodeRead(String barcode) {
-//        channel.invokeMethod("onBarcodeRead",barcode);
-        Log.println(Log.INFO, "ArtemisCameraUtil", barcode);
+        channel.invokeMethod("onBarcodeRead", barcode);
     }
 
     @Override
@@ -538,69 +541,46 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
         }
     }
 
+    public void processImageFromPath(final String p, final MethodChannel.Result flutterResult) {
+        Log.println(Log.INFO, "ArtemisCameraUtil", "ProcessingImageFromPath");
+        try {
+            InputImage image = InputImage.fromFilePath(context, Uri.fromFile(new File(p)));
 
-//    private void startCamera() {
-//        Log.println(Log.INFO, "ArtemisCameraUtil", "StaringCamera");
-//        cameraProviderFuture = ProcessCameraProvider.getInstance(activity);
-//        cameraProviderFuture.addListener(new Runnable() {
-//            @Override
-//            public void run() {
-//                try {
-//                    cameraProvider = cameraProviderFuture.get();
-//
-//                    prepareOptimalSize();
-//                    preview = new Preview.Builder()
-//                            .setTargetResolution(new Size(optimalPreviewSize.getWidth(), optimalPreviewSize.getHeight()))
-//                            .build();
-////                    preview.setSurfaceProvider(previewView.createSurfaceProvider());
-//
-//
-//                    imageCapture = new ImageCapture.Builder()
-////                            .setFlashMode(getFlashMode())
-//                            .setTargetResolution(new Size(optimalPreviewSize.getWidth(), optimalPreviewSize.getHeight()))
-//                            .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-//                            .build();
-//
-////                    if (hasBarcodeReader) {
-//                    imageAnalyzer = new ImageAnalysis.Builder()
-//                            .build();
-//                    imageAnalyzer.setAnalyzer(new Executor() {
-//                        @Override
-//                        public void execute(Runnable command) {
-//                            command.run();
-//                        }
-//                    }, new BarcodeAnalyzer());
-////                    }
-//
-//
-//                    if (selectedCameraID == 0)
-//                        cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
-//                    else cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA;
-//
-//                    bindCamera();
-//
-//
-//                } catch (ExecutionException e) {
-//                    e.printStackTrace();
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }, ContextCompat.getMainExecutor(activity));
-//    }
+            TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
 
-    //    private void bindCamera() {
-//        Log.println(Log.INFO, "ArtemisCameraUtil", "BindingCamera");
-//        cameraProvider.unbindAll();
-//        if (hasBarcodeReader) {
-//            camera = cameraProvider.bindToLifecycle((LifecycleOwner) activity, cameraSelector
-//                    , preview, imageCapture, imageAnalyzer);
-////            setFlashBarcodeReader();
-//        } else {
-//            cameraProvider.bindToLifecycle((LifecycleOwner) activity, cameraSelector
-//                    , preview, imageCapture);
-//        }
-//    }
+            recognizer.process(image)
+                    .addOnSuccessListener(visionText -> processText(visionText, p, flutterResult))
+                    .addOnFailureListener(e -> flutterResult.error("-1", e.getMessage(), ""));
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void processText(Text text, String path, final MethodChannel.Result flutterResult) {
+        List<LineModel> lineModels = new ArrayList<>();
+        for (Text.TextBlock b : text.getTextBlocks()) {
+
+            for (Text.Line line : b.getLines()) {
+                LineModel lineModel = new LineModel(line.getText());
+                for (Point p : Objects.requireNonNull(line.getCornerPoints())) {
+                    lineModel.cornerPoints.add(new CornerPointModel(p.x, p.y));
+                }
+                lineModels.add(lineModel);
+            }
+        }
+        Gson gson = new Gson();
+        gson.toJson(lineModels);
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("text", text.getText());
+        map.put("lines", lineModels);
+        map.put("path", path);
+        map.put("orientation", 0);
+
+        flutterResult.success(new Gson().toJson(map));
+    }
+
 
 }
 

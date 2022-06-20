@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
@@ -72,6 +73,18 @@ class MethodChannelArtemisCameraKit extends ArtemisCameraKitPlatform {
   @override
   Future<String?> takePicture([String path = ""]) async {
     return methodChannel.invokeMethod<String?>('takePicture', {"path": path});
+  }
+
+  @override
+  Future<OcrData?> processImageFromPath([String path = ""]) async {
+    String? ocrJson = await methodChannel.invokeMethod<String?>('processImageFromPath', {"path": path});
+    if (ocrJson == null) return null;
+    try {
+      OcrData ocrData = OcrData.fromJson(jsonDecode(ocrJson));
+      return ocrData;
+    } catch (e) {
+      return null;
+    }
   }
 
   @override

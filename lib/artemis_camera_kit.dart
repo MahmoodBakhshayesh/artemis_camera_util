@@ -35,4 +35,8 @@ class ArtemisCameraKit {
   Future<String?> takePicture([String path =""]) {
     return ArtemisCameraKitPlatform.instance.takePicture(path);
   }
+
+  Future<OcrData?> processImageFromPath([String path =""]) {
+    return ArtemisCameraKitPlatform.instance.processImageFromPath(path);
+  }
 }

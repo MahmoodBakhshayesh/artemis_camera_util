@@ -101,8 +101,12 @@ class _MyAppState extends State<MyApp> {
                       child: const Text("Resume")),
                   TextButton(
                       onPressed: () {
-                        _artemisCameraKitPlugin.takePicture().then((value){
-                          print(value);
+                        _artemisCameraKitPlugin.takePicture().then((imgPath){
+                          if(imgPath!=null) {
+                            _artemisCameraKitPlugin.processImageFromPath(imgPath).then((value) {
+                                print(value?.toJson());
+                            });
+                          }
                         });
                       },
                       child: const Text("Take Pic")),

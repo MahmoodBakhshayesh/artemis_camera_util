@@ -57,6 +57,10 @@ abstract class ArtemisCameraKitPlatform extends PlatformInterface {
     throw UnimplementedError('takePicture() has not been implemented.');
   }
 
+  Future<OcrData?> processImageFromPath([String path = ""]) {
+    throw UnimplementedError('processImageFromPath() has not been implemented.');
+  }
+
   Future<void> dispose() {
     throw UnimplementedError('dispose() has not been implemented.');
   }
@@ -65,6 +69,9 @@ abstract class ArtemisCameraKitPlatform extends PlatformInterface {
     throw UnimplementedError('changeCameraVisibility() has not been implemented.');
   }
 }
+
+
+
 
 enum BarcodeType { allFormats, code128, code39, cod93, codabar, dataMatrix, ean13, ean8, itf, qrCode, upcA, upcE, pdf417, aztec }
 
@@ -130,3 +137,73 @@ extension BarcodeTypeDetails on BarcodeType {
     }
   }
 }
+
+
+class OcrData {
+  OcrData({
+   required this.text,
+    this.path = "",
+    this.orientation = 0,
+   required this.lines,
+  });
+
+  String text;
+  String path;
+  int orientation;
+  List<OcrLine> lines;
+
+  factory OcrData.fromJson(Map<String, dynamic> json) => OcrData(
+    text: json["text"],
+    path: json["path"]??"",
+    orientation: json["orientation"]??0,
+    lines: List<OcrLine>.from((json["lines"]??[]).map((x) => OcrLine.fromJson(x))),
+  );
+
+  Map<String, dynamic> toJson() => {
+    "text": text,
+    "path": path,
+    "orientation": orientation,
+    "lines": List<dynamic>.from(lines.map((x) => x.toJson())),
+  };
+}
+
+class OcrLine {
+  OcrLine({
+    required this.text,
+    required this.cornerPoints,
+  });
+
+  String text;
+  List<OcrPoint> cornerPoints;
+
+  factory OcrLine.fromJson(Map<String, dynamic> json) => OcrLine(
+    text: json["text"],
+    cornerPoints: List<OcrPoint>.from(json["cornerPoints"].map((x) => OcrPoint.fromJson(x))),
+  );
+
+  Map<String, dynamic> toJson() => {
+    "text": text,
+    "cornerPoints": List<dynamic>.from(cornerPoints.map((x) => x.toJson())),
+  };
+}
+
+class OcrPoint {
+  OcrPoint({
+    required this.x,
+    required this.y,
+  });
+
+  double x;
+  double y;
+
+  factory OcrPoint.fromJson(Map<String, dynamic> json) => OcrPoint(
+    x: json["x"].toDouble(),
+    y: json["y"].toDouble(),
+  );
+
+  Map<String, dynamic> toJson() => {
+    "x": x,
+    "y": y,
+  };
+}
+
