@@ -1,0 +1,128 @@
+PODS:
+  - artemis_camera_kit (0.0.1):
+    - Flutter
+    - GoogleMLKit/BarcodeScanning
+    - GoogleMLKit/TextRecognition
+    - MTBBarcodeScanner
+  - Flutter (1.0.0)
+  - GoogleDataTransport (9.1.2):
+    - GoogleUtilities/Environment (~> 7.2)
+    - nanopb (~> 2.30908.0)
+    - PromisesObjC (< 3.0, >= 1.2)
+  - GoogleMLKit/BarcodeScanning (2.4.0):
+    - GoogleMLKit/MLKitCore
+    - MLKitBarcodeScanning (~> 1.5.0)
+  - GoogleMLKit/MLKitCore (2.4.0):
+    - MLKitCommon (~> 4.0.0)
+  - GoogleMLKit/TextRecognition (2.4.0):
+    - GoogleMLKit/MLKitCore
+    - MLKitTextRecognition (~> 1.4.0-beta2)
+  - GoogleToolboxForMac/DebugUtils (2.3.2):
+    - GoogleToolboxForMac/Defines (= 2.3.2)
+  - GoogleToolboxForMac/Defines (2.3.2)
+  - GoogleToolboxForMac/Logger (2.3.2):
+    - GoogleToolboxForMac/Defines (= 2.3.2)
+  - "GoogleToolboxForMac/NSData+zlib (2.3.2)":
+    - GoogleToolboxForMac/Defines (= 2.3.2)
+  - "GoogleToolboxForMac/NSDictionary+URLArguments (2.3.2)":
+    - GoogleToolboxForMac/DebugUtils (= 2.3.2)
+    - GoogleToolboxForMac/Defines (= 2.3.2)
+    - "GoogleToolboxForMac/NSString+URLArguments (= 2.3.2)"
+  - "GoogleToolboxForMac/NSString+URLArguments (2.3.2)"
+  - GoogleUtilities/Environment (7.6.0):
+    - PromisesObjC (< 3.0, >= 1.2)
+  - GoogleUtilities/Logger (7.6.0):
+    - GoogleUtilities/Environment
+  - GoogleUtilities/UserDefaults (7.6.0):
+    - GoogleUtilities/Logger
+  - GoogleUtilitiesComponents (1.0.0):
+    - GoogleUtilities/Logger
+  - GTMSessionFetcher/Core (1.7.0)
+  - MLImage (1.0.0-beta1)
+  - MLKitBarcodeScanning (1.5.0):
+    - MLKitCommon (~> 4.0)
+    - MLKitVision (~> 2.0)
+  - MLKitCommon (4.0.0):
+    - GoogleDataTransport (~> 9.0)
+    - GoogleToolboxForMac/Logger (~> 2.1)
+    - "GoogleToolboxForMac/NSData+zlib (~> 2.1)"
+    - "GoogleToolboxForMac/NSDictionary+URLArguments (~> 2.1)"
+    - GoogleUtilities/UserDefaults (~> 7.0)
+    - GoogleUtilitiesComponents (~> 1.0)
+    - GTMSessionFetcher/Core (~> 1.1)
+    - Protobuf (~> 3.12)
+  - MLKitTextRecognition (1.4.0-beta2):
+    - MLKitCommon (~> 4.0)
+    - MLKitTextRecognitionCommon (= 1.0.0-beta2)
+    - MLKitVision (~> 2.0)
+  - MLKitTextRecognitionCommon (1.0.0-beta2):
+    - MLKitCommon (~> 4.0)
+    - MLKitVision (~> 2.0)
+  - MLKitVision (2.0.0):
+    - GoogleToolboxForMac/Logger (~> 2.1)
+    - "GoogleToolboxForMac/NSData+zlib (~> 2.1)"
+    - GTMSessionFetcher/Core (~> 1.1)
+    - MLImage (= 1.0.0-beta1)
+    - MLKitCommon (~> 4.0)
+    - Protobuf (~> 3.12)
+  - MTBBarcodeScanner (5.0.11)
+  - nanopb (2.30908.0):
+    - nanopb/decode (= 2.30908.0)
+    - nanopb/encode (= 2.30908.0)
+  - nanopb/decode (2.30908.0)
+  - nanopb/encode (2.30908.0)
+  - PromisesObjC (2.0.0)
+  - Protobuf (3.19.1)
+
+DEPENDENCIES:
+  - artemis_camera_kit (from `.symlinks/plugins/artemis_camera_kit/ios`)
+  - Flutter (from `Flutter`)
+
+SPEC REPOS:
+  trunk:
+    - GoogleDataTransport
+    - GoogleMLKit
+    - GoogleToolboxForMac
+    - GoogleUtilities
+    - GoogleUtilitiesComponents
+    - GTMSessionFetcher
+    - MLImage
+    - MLKitBarcodeScanning
+    - MLKitCommon
+    - MLKitTextRecognition
+    - MLKitTextRecognitionCommon
+    - MLKitVision
+    - MTBBarcodeScanner
+    - nanopb
+    - PromisesObjC
+    - Protobuf
+
+EXTERNAL SOURCES:
+  artemis_camera_kit:
+    :path: ".symlinks/plugins/artemis_camera_kit/ios"
+  Flutter:
+    :path: Flutter
+
+SPEC CHECKSUMS:
+  artemis_camera_kit: fee626d7080bdce23dabf135f721acdf534b825e
+  Flutter: 50d75fe2f02b26cc09d224853bb45737f8b3214a
+  GoogleDataTransport: 629c20a4d363167143f30ea78320d5a7eb8bd940
+  GoogleMLKit: db5007bddb78dedf52b60f4038d32e7bd006b519
+  GoogleToolboxForMac: 8bef7c7c5cf7291c687cf5354f39f9db6399ad34
+  GoogleUtilities: 684ee790a24f73ebb2d1d966e9711c203f2a4237
+  GoogleUtilitiesComponents: a69c0b3b369ba443e988141e75ef49d9010b1c80
+  GTMSessionFetcher: 43748f93435c2aa068b1cbe39655aaf600652e91
+  MLImage: 647f3d580c10b3c9a3f6154f5d7baead60c42a0c
+  MLKitBarcodeScanning: 9fee06fcf50972f0d816ac8a6af29cee9838e6a6
+  MLKitCommon: 923bcf261636f36af5fbf329b1643ea3cd69468b
+  MLKitTextRecognition: 42eecbc7d269d3c6a2d5ff8f3d55f55c1a30932c
+  MLKitTextRecognitionCommon: 1028c20111848c08c82deba94a09ac352725c865
+  MLKitVision: 53b8f93a864c8d9740f7f09041911f2e64150ec8
+  MTBBarcodeScanner: f453b33c4b7dfe545d8c6484ed744d55671788cb
+  nanopb: a0ba3315591a9ae0a16a309ee504766e90db0c96
+  PromisesObjC: 68159ce6952d93e17b2dfe273b8c40907db5ba58
+  Protobuf: 3724efa50cb2846d7ccebc8691c574e85fd74471
+
+PODFILE CHECKSUM: fe0e1ee7f3d1f7d00b11b474b62dd62134535aea
+
+COCOAPODS: 1.11.3
