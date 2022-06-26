@@ -1,4 +1,5 @@
-import 'package:artemis_camera_kit/ArtemisCameraKitView.dart';
+
+import 'package:flutter/services.dart';
 
 import 'artemis_camera_kit_platform_interface.dart';
 
@@ -7,7 +8,7 @@ class ArtemisCameraKit {
     return ArtemisCameraKitPlatform.instance.getPlatformVersion();
   }
 
-  Future<bool?> getCameraPemission() {
+  Future<bool?> getCameraPermission() {
     return ArtemisCameraKitPlatform.instance.getCameraPermission();
   }
 
@@ -26,6 +27,10 @@ class ArtemisCameraKit {
     return ArtemisCameraKitPlatform.instance.changeFlashMode(mode);
   }
 
+  Future<void> changeCameraVisibility({required bool visibility}) {
+    return ArtemisCameraKitPlatform.instance.changeCameraVisibility(visibility);
+  }
+
   Future<void> pauseCamera() {
     return ArtemisCameraKitPlatform.instance.pauseCamera();
   }
@@ -41,5 +46,11 @@ class ArtemisCameraKit {
   Future<OcrData?> processImageFromPath([String path =""]) {
     return ArtemisCameraKitPlatform.instance.processImageFromPath(path);
   }
+
+  Future<void> setMethodCallHandler({required Future<dynamic> Function(MethodCall call)? handler}) {
+    return ArtemisCameraKitPlatform.instance.setMethodCallHandler(handler);
+  }
+
+
 }
 

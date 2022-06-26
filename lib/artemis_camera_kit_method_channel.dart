@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -12,13 +10,7 @@ class MethodChannelArtemisCameraKit extends ArtemisCameraKitPlatform {
   @visibleForTesting
   final methodChannel = const MethodChannel('artemis_camera_kit');
 
-  Future<dynamic> nativeMethodCallHandler(MethodCall methodCall) async {
-    if (methodCall.method == "onBarcodeRead") {
-      log(methodCall.arguments);
-    }
 
-    return null;
-  }
 
   @override
   Future<String?> getPlatformVersion() async {
@@ -40,7 +32,6 @@ class MethodChannelArtemisCameraKit extends ArtemisCameraKitPlatform {
     required BarcodeType barcodeType,
     required CameraType cameraType,
   }) async {
-    methodChannel.setMethodCallHandler(nativeMethodCallHandler);
     return methodChannel.invokeMethod<void>('initCamera', {
       "hasBarcodeReader": hasBarcodeReader,
       "initFlashModeID": initFlash.id,
@@ -90,5 +81,11 @@ class MethodChannelArtemisCameraKit extends ArtemisCameraKitPlatform {
   @override
   Future<void> changeCameraVisibility(bool visibility) async {
     methodChannel.invokeMethod<void>('changeCameraVisibility', {"visibility": visibility});
+  }
+
+
+  @override
+  Future<void> setMethodCallHandler(Future Function(MethodCall call)? handler) async {
+    methodChannel.setMethodCallHandler(handler);
   }
 }

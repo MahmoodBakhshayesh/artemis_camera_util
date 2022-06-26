@@ -1,3 +1,5 @@
+
+import 'package:flutter/services.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'artemis_camera_kit_method_channel.dart';
@@ -66,7 +68,11 @@ abstract class ArtemisCameraKitPlatform extends PlatformInterface {
   }
 
   Future<void> changeCameraVisibility(bool visibility) {
-    throw UnimplementedError('changeCameraVisibility() has not been implemented.');
+    throw UnimplementedError('changeCameraVisibility() has not been implemented!.');
+  }
+
+  Future<void> setMethodCallHandler(Future<dynamic> Function(MethodCall call)? handler) {
+    throw UnimplementedError('setMethodCallHandler() has not been implemented.');
   }
 }
 
