@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer';
 
 import 'package:artemis_camera_kit/artemis_camera_kit_controller.dart';
@@ -10,9 +11,11 @@ import 'artemis_camera_kit_platform_interface.dart';
 
 class ArtemisCameraKitView extends StatefulWidget {
   final void Function(String barcode)? onBarcodeRead;
+  final void Function(OcrData ocrData)? onOcrRead;
 
   // final void Function() onPermissionDenied;
   final ArtemisCameraKitController? controller;
+  final UsageMode mode;
   final bool hasBarcodeReader;
   final FlashMode initFlash;
   final bool fill;
@@ -24,10 +27,11 @@ class ArtemisCameraKitView extends StatefulWidget {
       this.controller,
       this.onBarcodeRead,
       this.hasBarcodeReader = true,
+      this.mode = UsageMode.barcodeScanner,
       this.initFlash = FlashMode.auto,
       this.fill = true,
       this.barcodeType = BarcodeType.allFormats,
-      this.cameraType = CameraType.back})
+      this.cameraType = CameraType.back, this.onOcrRead})
       : super(key: key);
 
   @override
@@ -95,6 +99,7 @@ class _ArtemisCameraKitViewState extends State<ArtemisCameraKitView> with Widget
         controller.initCamera(
           barcodeType: widget.barcodeType,
           fill: widget.fill,
+          mode: widget.mode,
           initFlash: widget.initFlash,
           cameraType: widget.cameraType,
           hasBarcodeReader: widget.hasBarcodeReader,
@@ -144,15 +149,30 @@ class _ArtemisCameraKitViewState extends State<ArtemisCameraKitView> with Widget
   }
 
   Future<dynamic> _methodCallHandler(MethodCall methodCall) async {
+
+
     if (methodCall.method == "onBarcodeRead") {
       String barcode = methodCall.arguments.toString();
       if (widget.onBarcodeRead == null) {
-        log("Barcode $barcode Detected but no OnBarcodeRead is Implemented");
+        log("Barcode $barcode Detected but no OnBarcodeRead is not Implemented");
       } else {
         widget.onBarcodeRead!(barcode);
       }
+    }else if(methodCall.method == "onTextRead"){
+      String? ocrJson = await methodCall.arguments;
+      if (ocrJson == null) return null;
+      try {
+        OcrData ocrData = OcrData.fromJson(jsonDecode(ocrJson));
+        if (widget.onOcrRead == null) {
+          log("Text ${ocrData.text} Detected but no onOcrRead is not  Implemented");
+        } else {
+          widget.onOcrRead!(ocrData);
+        }
+        log("Text ${ocrData.text} Detected but no OnBarcodeRead is not Implemented");
+      } catch (e) {
+        return null;
+      }
     }
 
-    return null;
   }
 }

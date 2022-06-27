@@ -15,7 +15,7 @@ class CameraView: NSObject, FlutterPlatformView, AVCapturePhotoCaptureDelegate, 
     private var _view: UIView
     let channel: FlutterMethodChannel
     let frame: CGRect
-    var hasBarcodeReader:Bool!
+//    var hasBarcodeReader:Bool!
     var imageSavePath:String!
     var isCameraVisible:Bool! = true
     var initCameraFinished:Bool! = false
@@ -34,6 +34,9 @@ class CameraView: NSObject, FlutterPlatformView, AVCapturePhotoCaptureDelegate, 
     var flutterResultTakePicture:FlutterResult!
     var flutterResultOcr:FlutterResult!
     var orientation : UIImage.Orientation!
+    
+    /// 0:camera 1:barcodeScanner 2:ocrReader
+    var usageMode:Int = 0
     
     init(
         frame: CGRect,
@@ -77,13 +80,13 @@ class CameraView: NSObject, FlutterPlatformView, AVCapturePhotoCaptureDelegate, 
             break
         case "initCamera":
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                let hasBarcodeReader = (myArgs?["hasBarcodeReader"] as! Bool);
                 let initFlashModeID = (myArgs?["initFlashModeID"] as! Int);
+                let modeID = (myArgs?["modeID"] as! Int);
                 let fill = (myArgs?["fill"] as! Bool);
                 let barcodeTypeID = (myArgs?["barcodeTypeID"] as! Int);
                 let cameraTypeID = (myArgs?["cameraTypeID"] as! Int);
                 
-                self.initCamera(hasBarcodeReader: hasBarcodeReader, flashMode: initFlashModeID, fill: fill, barcodeTypeID: barcodeTypeID, cameraID: cameraTypeID)
+                self.initCamera( flashMode: initFlashModeID, fill: fill, barcodeTypeID: barcodeTypeID, cameraID: cameraTypeID,modeID: modeID)
                 
             }
             break
@@ -139,13 +142,14 @@ class CameraView: NSObject, FlutterPlatformView, AVCapturePhotoCaptureDelegate, 
     }
     
     
-    func initCamera(hasBarcodeReader: Bool, flashMode: Int, fill: Bool, barcodeTypeID: Int, cameraID: Int) {
-        self.hasBarcodeReader = hasBarcodeReader
+    func initCamera( flashMode: Int, fill: Bool, barcodeTypeID: Int, cameraID: Int, modeID: Int) {
+        print("Usage Mode set to "+String(modeID))
+        self.usageMode = modeID
         self.isFillScale = fill
         self.cameraPosition = cameraID == 0 ? .back : .front
         var myBarcodeMode: Int
         setFlashMode(flashMode: flashMode)
-        if hasBarcodeReader == true{
+        if (usageMode == 1){
             if barcodeTypeID == 0 {
                 myBarcodeMode = 65535
             }
@@ -196,7 +200,7 @@ class CameraView: NSObject, FlutterPlatformView, AVCapturePhotoCaptureDelegate, 
                 fromDevicePosition: cameraPosition
             )
             
-            if(hasBarcodeReader) {
+            if(usageMode == 1){
                 videoDataOutput = AVCaptureVideoDataOutput()
                 videoDataOutput.alwaysDiscardsLateVideoFrames=true
                 
@@ -206,22 +210,26 @@ class CameraView: NSObject, FlutterPlatformView, AVCapturePhotoCaptureDelegate, 
                     session.addOutput(videoDataOutput!)
                 }
                 videoDataOutput.connection(with: .video)?.isEnabled = true
-                AudioServicesDisposeSystemSoundID(1108)
-                photoOutput = AVCapturePhotoOutput()
-                photoOutput?.setPreparedPhotoSettingsArray([AVCapturePhotoSettings(format: [AVVideoCodecKey : AVVideoCodecJPEG])], completionHandler: nil)
-                if session.canAddOutput(photoOutput!){
-                    session.addOutput(photoOutput!)
-                }
                 
-            }
-            else {
-                AudioServicesDisposeSystemSoundID(1108)
-                photoOutput = AVCapturePhotoOutput()
-                photoOutput?.setPreparedPhotoSettingsArray([AVCapturePhotoSettings(format: [AVVideoCodecKey : AVVideoCodecJPEG])], completionHandler: nil)
-                if session.canAddOutput(photoOutput!){
-                    session.addOutput(photoOutput!)
+            }else if(usageMode == 2){
+                videoDataOutput = AVCaptureVideoDataOutput()
+                videoDataOutput.alwaysDiscardsLateVideoFrames = true
+                
+                videoDataOutputQueue = DispatchQueue(label: "VideoDataOutputQueue")
+                videoDataOutput.setSampleBufferDelegate(self, queue:self.videoDataOutputQueue)
+                if session.canAddOutput(videoDataOutput!){
+                    session.addOutput(videoDataOutput)
                 }
+                videoDataOutput.connection(with: .video)?.isEnabled = true
             }
+            
+            AudioServicesDisposeSystemSoundID(1108)
+            photoOutput = AVCapturePhotoOutput()
+            photoOutput?.setPreparedPhotoSettingsArray([AVCapturePhotoSettings(format: [AVVideoCodecKey : AVVideoCodecJPEG])], completionHandler: nil)
+            if session.canAddOutput(photoOutput!){
+                session.addOutput(photoOutput!)
+            }
+
             
             
             
@@ -274,7 +282,7 @@ class CameraView: NSObject, FlutterPlatformView, AVCapturePhotoCaptureDelegate, 
     
     func changeFlashMode() {
         
-        if(self.hasBarcodeReader) {
+        if(self.usageMode>0) {
             do{
                 if (captureDevice.hasFlash)
                 {
@@ -471,57 +479,102 @@ class CameraView: NSObject, FlutterPlatformView, AVCapturePhotoCaptureDelegate, 
     
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         
-        
-        
-        // do stuff here
-        if barcodeScanner != nil {
-            let visionImage = VisionImage(buffer: sampleBuffer)
-            let orientation = imageOrientation(
-                fromDevicePosition: cameraPosition
-            )
-            visionImage.orientation = orientation
-            var barcodes: [Barcode]
-            do {
-                barcodes = try self.barcodeScanner.results(in: visionImage)
-            } catch let error {
-                print("Failed to scan barcodes with error: \(error.localizedDescription).")
-                return
-            }
+        if(usageMode==1){
             
-            guard !barcodes.isEmpty else {
-                //print("Barcode scanner returrned no results.")
-                return
+            // do stuff here
+            if barcodeScanner != nil {
+                let visionImage = VisionImage(buffer: sampleBuffer)
+                let orientation = imageOrientation(
+                    fromDevicePosition: cameraPosition
+                )
+                visionImage.orientation = orientation
+                var barcodes: [Barcode]
+                do {
+                    barcodes = try self.barcodeScanner.results(in: visionImage)
+                } catch let error {
+                    print("Failed to scan barcodes with error: \(error.localizedDescription).")
+                    return
+                }
+                
+                guard !barcodes.isEmpty else {
+                    //print("Barcode scanner returrned no results.")
+                    return
+                }
+                
+                for barcode in barcodes {
+                    onBarcodeRead(barcode: barcode.rawValue!)
+                }
             }
-            
-            for barcode in barcodes {
-                barcodeRead(barcode: barcode.rawValue!)
+//
+//            if(false) {
+//                let visionImage = VisionImage(buffer: sampleBuffer)
+//                visionImage.orientation = orientation
+//                proccessImage(visionImage: visionImage)
+//            }
+        }else if(usageMode == 2){
+            if(textRecognizer != nil) {
+                let visionImage = VisionImage(buffer: sampleBuffer)
+                visionImage.orientation = orientation
+                
+                do {
+                    let result = try textRecognizer?.results(in: visionImage)
+                    
+                    if(result?.text != "") {
+                        var listLineModel: [LineModel] = []
+                        
+                        for b in result!.blocks {
+                            for l in b.lines{
+                                let lineModel : LineModel = LineModel()
+                                lineModel.text = l.text
+                                
+                                
+                                
+                                for c in l.cornerPoints {
+                                    lineModel.cornerPoints.append(CornerPointModel(x: c.cgPointValue.x, y: c.cgPointValue.y))
+                                }
+                                
+                                listLineModel.append(lineModel)
+                                
+                            }
+                        }
+                        
+                        
+                        self.onTextRead(text: result!.text, values: listLineModel, path: "", orientation:  visionImage.orientation.rawValue)
+                        
+                    } else {
+                        
+                        self.onTextRead(text: "", values: [], path: "", orientation:  nil)
+                    }
+                    
+                
+                    
+                } catch {
+                    print("can't fetch result")
+                }
             }
-        }
-        
-        if(false) {
-            let visionImage = VisionImage(buffer: sampleBuffer)
-            visionImage.orientation = orientation
-            proccessImage(visionImage: visionImage)
         }
         
     }
     
-    func barcodeRead(barcode: String) {
+    func onBarcodeRead(barcode: String) {
         channel.invokeMethod("onBarcodeRead", arguments: barcode)
+    }
+    
+    
+    
+    func onTextRead(text: String, values: [LineModel], path: String?, orientation: Int?) {
+        let data = OcrData(text: text, path: path, orientation: orientation, lines: values)
+        let jsonEncoder = JSONEncoder()
+        let jsonData = try! jsonEncoder.encode(data)
+        let json = String(data: jsonData, encoding: String.Encoding.utf8)
+        channel.invokeMethod("onTextRead", arguments: json)
     }
     
     func proccessImage(visionImage: VisionImage, image: UIImage? = nil, selectedImagePath : String? = nil) {
         if textRecognizer != nil {
             
-            //            print("Here in proccessImage")
-            //            print(selectedImagePath)
             var path : String?
-            //                    if image != nil {
-            //                        path = self.saveImage(image: image!)
-            //                    }
-            //                    else {
             path = selectedImagePath
-            //                    }
             
             textRecognizer?.process(visionImage) { result, error in
                 guard error == nil, let result = result else {
@@ -534,7 +587,6 @@ class CameraView: NSObject, FlutterPlatformView, AVCapturePhotoCaptureDelegate, 
                 
                 if(result.text != "") {
                     var listLineModel: [LineModel] = []
-                    var values : String = ""
                     
                     for b in result.blocks {
                         for l in b.lines{
@@ -555,15 +607,6 @@ class CameraView: NSObject, FlutterPlatformView, AVCapturePhotoCaptureDelegate, 
                             
                         }
                     }
-                    
-                    
-                    do{
-                        let jsonData =  try JSONEncoder().encode(listLineModel)
-                        values = String(data: jsonData, encoding: String.Encoding.utf8)!
-                    }catch{
-                        fatalError("Unable To Convert in Json")
-                    }
-                    
                     
                     
                     self.textRead(text: result.text, values: listLineModel, path: path, orientation:  visionImage.orientation.rawValue)

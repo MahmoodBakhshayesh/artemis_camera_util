@@ -31,10 +31,12 @@ class MethodChannelArtemisCameraKit extends ArtemisCameraKitPlatform {
     required bool fill,
     required BarcodeType barcodeType,
     required CameraType cameraType,
+    required UsageMode mode,
   }) async {
     return methodChannel.invokeMethod<void>('initCamera', {
       "hasBarcodeReader": hasBarcodeReader,
       "initFlashModeID": initFlash.id,
+      "modeID": mode.id,
       "fill": fill,
       "barcodeTypeID": barcodeType.id,
       "cameraTypeID": cameraType.id

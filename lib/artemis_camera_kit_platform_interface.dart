@@ -39,6 +39,7 @@ abstract class ArtemisCameraKitPlatform extends PlatformInterface {
     required bool fill,
     required BarcodeType barcodeType,
     required CameraType cameraType,
+    required UsageMode mode,
   }) {
     throw UnimplementedError('initCamera() has not been implemented.');
   }
@@ -85,6 +86,8 @@ enum CameraType { back, front }
 
 enum FlashMode { on, off, auto }
 
+enum UsageMode { camera,barcodeScanner,ocrReader}
+
 extension FlashModeDetails on FlashMode {
   int get id {
     switch (this) {
@@ -105,6 +108,19 @@ extension CameraTypeDetails on CameraType {
         return 0;
       case CameraType.front:
         return 1;
+    }
+  }
+}
+
+extension UsageModeDetails on UsageMode {
+  int get id {
+    switch (this) {
+      case UsageMode.camera:
+        return 0;
+      case UsageMode.barcodeScanner:
+        return 1;
+      case UsageMode.ocrReader:
+        return 2;
     }
   }
 }
@@ -140,6 +156,39 @@ extension BarcodeTypeDetails on BarcodeType {
         return 2048;
       case BarcodeType.aztec:
         return 4096;
+    }
+  }
+
+  String get name {
+    switch (this) {
+      case BarcodeType.allFormats:
+        return "All";
+      case BarcodeType.code128:
+        return "Code128";
+      case BarcodeType.code39:
+        return "Code39";
+      case BarcodeType.cod93:
+        return "Code93";
+      case BarcodeType.codabar:
+        return "CodaBar";
+      case BarcodeType.dataMatrix:
+        return "DataMatrix";
+      case BarcodeType.ean13:
+        return "Ean13";
+      case BarcodeType.ean8:
+        return "Ean8";
+      case BarcodeType.itf:
+        return "Itf";
+      case BarcodeType.qrCode:
+        return "QrCode";
+      case BarcodeType.upcA:
+        return "UpcA";
+      case BarcodeType.upcE:
+        return "UpcE";
+      case BarcodeType.pdf417:
+        return "Pdf417";
+      case BarcodeType.aztec:
+        return "Aztec";
     }
   }
 }

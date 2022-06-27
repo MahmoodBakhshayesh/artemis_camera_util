@@ -97,7 +97,9 @@ class _MyAppState extends State<MyApp> {
                       child: const Text("Take Pic")),
                 ],
               ),
-              const Expanded(child: ArtemisCameraKitView())
+              const Expanded(child: ArtemisCameraKitView(
+                mode: UsageMode.ocrReader,
+              ))
             ],
           ),
         ),

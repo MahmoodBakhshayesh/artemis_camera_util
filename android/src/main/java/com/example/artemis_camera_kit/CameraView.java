@@ -84,12 +84,14 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
     private final Activity activity;
     private final Context context;
     private BarcodeScanner scanner;
+    private TextRecognizer recognizer;
     private BarcodeScannerOptions options;
     final private MethodChannel channel;
     private ImageCapture imageCapture;
-    private boolean hasBarcodeReader;
+//    private boolean hasBarcodeReader;
     private int selectedCameraID;
     private int flashModeID;
+    private int modeID;
     private Point displaySize;
     private PreviewView previewView;
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
@@ -133,11 +135,11 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
                 break;
             case "initCamera":
                 int initFlashModeID = call.argument("initFlashModeID");
-                boolean hasBarcodeReader = Boolean.TRUE.equals(call.argument("hasBarcodeReader"));
                 boolean fill = Boolean.TRUE.equals(call.argument("fill"));
                 int barcodeTypeID = call.argument("barcodeTypeID");
+                int modeID = call.argument("modeID");
                 int cameraID = call.argument("cameraTypeID");
-                initCamera(hasBarcodeReader, initFlashModeID, fill, barcodeTypeID, cameraID);
+                initCamera( initFlashModeID, fill, barcodeTypeID, cameraID, modeID);
                 break;
             case "changeFlashMode":
                 int flashModeID = call.argument("flashModeID");
@@ -171,7 +173,6 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
     }
 
 
-
     private void getCameraPermission(MethodChannel.Result result) {
         Log.println(Log.INFO, "ArtemisCameraUtil", "GettingCameraPermission");
         final int REQUEST_CAMERA_PERMISSION = 10001;
@@ -192,15 +193,15 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
             });
 
         } else {
-                result.success(true);
+            result.success(true);
         }
     }
 
     @Override
-    public void initCamera(boolean hasBarcodeReader, int flashModeID, boolean fill, int barcodeTypeID, int cameraID) {
+    public void initCamera( int flashModeID, boolean fill, int barcodeTypeID, int cameraID, int modeID) {
         Log.println(Log.INFO, "ArtemisCameraUtil", "InitializingCamera");
-        this.hasBarcodeReader = hasBarcodeReader;
         this.flashModeID = flashModeID;
+        this.modeID = modeID;
         selectedCameraID = 0;
 
         if (cameraID == 0) {
@@ -209,11 +210,20 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
             cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_FRONT).build();
         }
 
-
-        if (hasBarcodeReader) {
+        if (modeID == 1) {
             options = new BarcodeScannerOptions.Builder().setBarcodeFormats(barcodeTypeID).build();
             scanner = BarcodeScanning.getClient(options);
+        } else if (modeID == 2) {
+            recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
         }
+
+
+//        if (hasBarcodeReader) {
+//            options = new BarcodeScannerOptions.Builder().setBarcodeFormats(barcodeTypeID).build();
+//            scanner = BarcodeScanning.getClient(options);
+//        }
+
+
         try {
             displaySize = new Point();
             DisplayMetrics displaymetrics = new DisplayMetrics();
@@ -244,14 +254,17 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
             try {
                 prepareOptimalSize();
                 imageCapture = new ImageCapture.Builder()
-//                            .setFlashMode(getFlashMode())
+                        .setFlashMode(getFlashMode())
                         .setTargetResolution(new Size(optimalPreviewSize.getWidth(), optimalPreviewSize.getHeight()))
                         .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                         .build();
 
-                if (hasBarcodeReader) {
+                if (modeID == 1) {
                     imageAnalyzer = new ImageAnalysis.Builder().build();
                     imageAnalyzer.setAnalyzer(Runnable::run, new BarcodeAnalyzer());
+                } else if (modeID == 2) {
+                    imageAnalyzer = new ImageAnalysis.Builder().build();
+                    imageAnalyzer.setAnalyzer(Runnable::run, new OcrAnalyzer());
                 }
                 cameraProvider = cameraProviderFuture.get();
                 bindPreview(cameraProvider);
@@ -271,12 +284,9 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
 
         preview.setSurfaceProvider(previewView.getSurfaceProvider());
 
-//        @SuppressLint("UnsafeOptInUsageError") UseCaseGroup useCaseGroup = new UseCaseGroup.Builder()
-//                .addUseCase(preview)
-//                .addUseCase(imageCapture)//use this case if you want take picture or videoCapture for videoRecording
-//                .build();
-
-        if (hasBarcodeReader) {
+        if(modeID==1){
+            camera = cameraProvider.bindToLifecycle((LifecycleOwner) activity, cameraSelector, preview, imageAnalyzer, imageCapture);
+        }else if(modeID ==2){
             camera = cameraProvider.bindToLifecycle((LifecycleOwner) activity, cameraSelector, preview, imageAnalyzer, imageCapture);
         } else {
             camera = cameraProvider.bindToLifecycle((LifecycleOwner) activity, cameraSelector, preview, imageCapture);
@@ -475,7 +485,12 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
     public void resumeCamera() {
         Log.println(Log.INFO, "ArtemisCameraUtil", "ResumingCamera");
         if (isCameraVisible) {
-            if (scanner == null && hasBarcodeReader) scanner = BarcodeScanning.getClient(options);
+            if(modeID ==1){
+                if (scanner == null) scanner = BarcodeScanning.getClient(options);
+            }else if(modeID ==2){
+                if (recognizer == null) recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+            }
+
             startCamera();
         }
     }
@@ -489,6 +504,11 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
     public void onBarcodeRead(String barcode) {
         channel.invokeMethod("onBarcodeRead", barcode);
     }
+
+    public void onTextRead(String ocrData) {
+        channel.invokeMethod("onTextRead", ocrData);
+    }
+
 
     @Override
     public void onTakePicture(MethodChannel.Result result, String filePath) {
@@ -529,6 +549,50 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
                     onBarcodeRead(barcode.getRawValue());
             }
         }
+    }
+
+    private class OcrAnalyzer implements ImageAnalysis.Analyzer {
+
+        @Override
+        public void analyze(@NonNull ImageProxy imageProxy) {
+            @SuppressLint({"UnsafeExperimentalUsageError", "UnsafeOptInUsageError"})
+            Image mediaImage = imageProxy.getImage();
+            if (mediaImage != null) {
+                InputImage image =
+                        InputImage.fromMediaImage(mediaImage, imageProxy.getImageInfo().getRotationDegrees());
+                recognizer.process(image)
+                        .addOnSuccessListener(this::onSuccess)
+                        .addOnFailureListener(e -> System.out.println("Error in reading ocr: " + e.getMessage()))
+                        .addOnCompleteListener(task -> imageProxy.close());
+
+            }
+        }
+
+        private void onSuccess(Text text) {
+            if(text.getText().trim().isEmpty())return;
+            List<LineModel> lineModels = new ArrayList<>();
+            for (Text.TextBlock b : text.getTextBlocks()) {
+
+                for (Text.Line line : b.getLines()) {
+                    LineModel lineModel = new LineModel(line.getText());
+                    for (Point p : Objects.requireNonNull(line.getCornerPoints())) {
+                        lineModel.cornerPoints.add(new CornerPointModel(p.x, p.y));
+                    }
+                    lineModels.add(lineModel);
+                }
+            }
+            Gson gson = new Gson();
+            gson.toJson(lineModels);
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("text", text.getText());
+            map.put("lines", lineModels);
+            map.put("path", "");
+            map.put("orientation", 0);
+
+            onTextRead(new Gson().toJson(map));
+        }
+
     }
 
     static class CompareSizesByArea implements Comparator<Size> {
