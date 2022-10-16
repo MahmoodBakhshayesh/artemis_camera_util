@@ -232,8 +232,8 @@ class OcrLine {
   List<OcrPoint> cornerPoints;
 
   factory OcrLine.fromJson(Map<String, dynamic> json) => OcrLine(
-    text: json["text"],
-    cornerPoints: List<OcrPoint>.from(json["cornerPoints"].map((x) => OcrPoint.fromJson(x))),
+    text: json["text"]??json["a"]??"",
+    cornerPoints: List<OcrPoint>.from((json["cornerPoints"]??json["b"]??[]).map((x) => OcrPoint.fromJson(x))),
   );
 
   Map<String, dynamic> toJson() => {
@@ -252,8 +252,8 @@ class OcrPoint {
   double y;
 
   factory OcrPoint.fromJson(Map<String, dynamic> json) => OcrPoint(
-    x: json["x"].toDouble(),
-    y: json["y"].toDouble(),
+    x: (json["x"]??json["a"]).toDouble(),
+    y: (json["y"]??json["b"]).toDouble(),
   );
 
   Map<String, dynamic> toJson() => {

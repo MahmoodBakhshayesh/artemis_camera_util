@@ -1,5 +1,6 @@
 package com.example.artemis_camera_kit;
 
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -13,9 +14,9 @@ import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.ExifInterface;
 import android.media.Image;
 import android.net.Uri;
-import android.os.Build;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
@@ -29,6 +30,7 @@ import androidx.annotation.NonNull;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
+import androidx.camera.core.CameraXThreads;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
@@ -71,9 +73,6 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.platform.PlatformView;
 
-import static android.content.ContentValues.TAG;
-
-
 class CameraView implements PlatformView, CameraViewInterface, MethodChannel.MethodCallHandler, FlutterMethodListener {
     private static final int MAX_PREVIEW_WIDTH = 1920;
     private static final int MAX_PREVIEW_HEIGHT = 1080;
@@ -84,11 +83,13 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
     private final Activity activity;
     private final Context context;
     private BarcodeScanner scanner;
+
+    //    private ZXingScannerView mScannerView;
     private TextRecognizer recognizer;
     private BarcodeScannerOptions options;
     final private MethodChannel channel;
     private ImageCapture imageCapture;
-//    private boolean hasBarcodeReader;
+    //    private boolean hasBarcodeReader;
     private int selectedCameraID;
     private int flashModeID;
     private int modeID;
@@ -295,6 +296,7 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
 
     }
 
+    @SuppressLint("RestrictedApi")
     private void prepareOptimalSize() {
         Log.println(Log.INFO, "ArtemisCameraUtil", "PreparingOptimalSize");
         int width = previewView.getWidth();
@@ -342,7 +344,7 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
                         }
                         break;
                     default:
-                        Log.e(TAG, "Display rotation is invalid: " + displayRotation);
+                        Log.e(CameraXThreads.TAG, "Display rotation is invalid: " + displayRotation);
                 }
 
 
@@ -387,6 +389,7 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
 
     }
 
+    @SuppressLint("RestrictedApi")
     private static Size chooseOptimalSize(Size[] choices, int textureViewWidth, int textureViewHeight, int maxWidth, int maxHeight) {
 
         Log.println(Log.INFO, "ArtemisCameraUtil", "ChoosingOptimalSize");
@@ -416,7 +419,7 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
         } else if (notBigEnough.size() > 0) {
             return Collections.max(notBigEnough, new CompareSizesByArea());
         } else {
-            Log.e(TAG, "Couldn't find any suitable preview size");
+            Log.e(CameraXThreads.TAG, "Couldn't find any suitable preview size");
             return choices[0];
         }
     }
@@ -608,8 +611,21 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
     public void processImageFromPath(final String p, final MethodChannel.Result flutterResult) {
         Log.println(Log.INFO, "ArtemisCameraUtil", "ProcessingImageFromPath");
         try {
+//        Bitmap bitmap = BitmapFactory.decodeFile(p);
+//
+////            InputImage image = InputImage.fromBitmap(bitmap, 0);
+//            InputImage image = InputImage.fromBitmap(bitmap, 0);
+//
+////            InputImage image = InputImage.fromFilePath(context, Uri.fromFile(new File(p)));
+//
+//            TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+//        ExifInterface exif = new ExifInterface(p);
+//        int rotation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+//        int rotationInDegrees = exifToDegrees(rotation);
+//
+//        Bitmap bitmap = BitmapFactory.decodeFile(p);
+//        final InputImage image = InputImage.fromBitmap(bitmap, rotationInDegrees);
             InputImage image = InputImage.fromFilePath(context, Uri.fromFile(new File(p)));
-
             TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
 
             recognizer.process(image)
@@ -622,6 +638,9 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
     }
 
     public void processText(Text text, String path, final MethodChannel.Result flutterResult) {
+        Log.println(Log.INFO, "ArtemisCameraUtil", "processText");
+        if(text.getText().trim().isEmpty())return;
+
         List<LineModel> lineModels = new ArrayList<>();
         for (Text.TextBlock b : text.getTextBlocks()) {
 
@@ -633,16 +652,29 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
                 lineModels.add(lineModel);
             }
         }
-        Gson gson = new Gson();
-        gson.toJson(lineModels);
+//        Gson gson = new Gson();
+//        gson.toJson(lineModels);
 
         Map<String, Object> map = new HashMap<>();
         map.put("text", text.getText());
         map.put("lines", lineModels);
         map.put("path", path);
         map.put("orientation", 0);
-
         flutterResult.success(new Gson().toJson(map));
+
+
+
+    }
+
+    private static int exifToDegrees(int exifOrientation) {
+        if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_90) {
+            return 90;
+        } else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_180) {
+            return 180;
+        } else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_270) {
+            return 270;
+        }
+        return 0;
     }
 
 

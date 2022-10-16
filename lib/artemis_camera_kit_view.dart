@@ -168,7 +168,6 @@ class _ArtemisCameraKitViewState extends State<ArtemisCameraKitView> with Widget
         } else {
           widget.onOcrRead!(ocrData);
         }
-        log("Text ${ocrData.text} Detected but no OnBarcodeRead is not Implemented");
       } catch (e) {
         return null;
       }

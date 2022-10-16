@@ -20,6 +20,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final ArtemisCameraKitController cameraKitController = ArtemisCameraKitController();
+  List<String> barcodes = [];
   @override
   void initState() {
     super.initState();
@@ -87,9 +88,14 @@ class _MyAppState extends State<MyApp> {
                       onPressed: () {
                         cameraKitController.takePicture().then((imgPath){
                           log(imgPath.toString());
+
                           if(imgPath!=null) {
                             cameraKitController.processImageFromPath(imgPath).then((value) {
-                              log(jsonEncode(value?.toJson()));
+                              if(value==null){
+                                print("NULL OCR");
+                              }else {
+                                print(value.toJson());
+                              }
                             });
                           }
                         });
@@ -97,8 +103,16 @@ class _MyAppState extends State<MyApp> {
                       child: const Text("Take Pic")),
                 ],
               ),
-              const Expanded(child: ArtemisCameraKitView(
-                mode: UsageMode.ocrReader,
+               Expanded(child: ArtemisCameraKitView(
+                mode: UsageMode.barcodeScanner,
+                barcodeType: BarcodeType.itf,
+                onBarcodeRead: (b){
+                  if(!barcodes.contains(b) && b.length==10){
+                    barcodes.add(b);
+                  }
+                  print(barcodes);
+                  print(barcodes.length);
+                },
               ))
             ],
           ),
