@@ -49,12 +49,12 @@ import com.google.gson.Gson;
 import com.google.mlkit.vision.barcode.BarcodeScanner;
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
 import com.google.mlkit.vision.barcode.BarcodeScanning;
-import com.google.mlkit.vision.barcode.common.Barcode;
+import com.google.mlkit.vision.barcode.Barcode;
 import com.google.mlkit.vision.common.InputImage;
-import com.google.mlkit.vision.text.Text;
-import com.google.mlkit.vision.text.TextRecognition;
-import com.google.mlkit.vision.text.TextRecognizer;
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
+//import com.google.mlkit.vision.text.Text;
+//import com.google.mlkit.vision.text.TextRecognition;
+//import com.google.mlkit.vision.text.TextRecognizer;
+//import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 
 import java.io.File;
 import java.io.IOException;
@@ -85,7 +85,7 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
     private BarcodeScanner scanner;
 
     //    private ZXingScannerView mScannerView;
-    private TextRecognizer recognizer;
+//    private TextRecognizer recognizer;
     private BarcodeScannerOptions options;
     final private MethodChannel channel;
     private ImageCapture imageCapture;
@@ -215,7 +215,7 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
             options = new BarcodeScannerOptions.Builder().setBarcodeFormats(barcodeTypeID).build();
             scanner = BarcodeScanning.getClient(options);
         } else if (modeID == 2) {
-            recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+//            recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
         }
 
 
@@ -491,7 +491,7 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
             if(modeID ==1){
                 if (scanner == null) scanner = BarcodeScanning.getClient(options);
             }else if(modeID ==2){
-                if (recognizer == null) recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+//                if (recognizer == null) recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
             }
 
             startCamera();
@@ -560,41 +560,41 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
         public void analyze(@NonNull ImageProxy imageProxy) {
             @SuppressLint({"UnsafeExperimentalUsageError", "UnsafeOptInUsageError"})
             Image mediaImage = imageProxy.getImage();
-            if (mediaImage != null) {
-                InputImage image =
-                        InputImage.fromMediaImage(mediaImage, imageProxy.getImageInfo().getRotationDegrees());
-                recognizer.process(image)
-                        .addOnSuccessListener(this::onSuccess)
-                        .addOnFailureListener(e -> System.out.println("Error in reading ocr: " + e.getMessage()))
-                        .addOnCompleteListener(task -> imageProxy.close());
-
-            }
+//            if (mediaImage != null) {
+//                InputImage image =
+//                        InputImage.fromMediaImage(mediaImage, imageProxy.getImageInfo().getRotationDegrees());
+//                recognizer.process(image)
+//                        .addOnSuccessListener(this::onSuccess)
+//                        .addOnFailureListener(e -> System.out.println("Error in reading ocr: " + e.getMessage()))
+//                        .addOnCompleteListener(task -> imageProxy.close());
+//
+//            }
         }
 
-        private void onSuccess(Text text) {
-            if(text.getText().trim().isEmpty())return;
-            List<LineModel> lineModels = new ArrayList<>();
-            for (Text.TextBlock b : text.getTextBlocks()) {
-
-                for (Text.Line line : b.getLines()) {
-                    LineModel lineModel = new LineModel(line.getText());
-                    for (Point p : Objects.requireNonNull(line.getCornerPoints())) {
-                        lineModel.cornerPoints.add(new CornerPointModel(p.x, p.y));
-                    }
-                    lineModels.add(lineModel);
-                }
-            }
-            Gson gson = new Gson();
-            gson.toJson(lineModels);
-
-            Map<String, Object> map = new HashMap<>();
-            map.put("text", text.getText());
-            map.put("lines", lineModels);
-            map.put("path", "");
-            map.put("orientation", 0);
-
-            onTextRead(new Gson().toJson(map));
-        }
+//        private void onSuccess(Text text) {
+//            if(text.getText().trim().isEmpty())return;
+//            List<LineModel> lineModels = new ArrayList<>();
+//            for (Text.TextBlock b : text.getTextBlocks()) {
+//
+//                for (Text.Line line : b.getLines()) {
+//                    LineModel lineModel = new LineModel(line.getText());
+//                    for (Point p : Objects.requireNonNull(line.getCornerPoints())) {
+//                        lineModel.cornerPoints.add(new CornerPointModel(p.x, p.y));
+//                    }
+//                    lineModels.add(lineModel);
+//                }
+//            }
+//            Gson gson = new Gson();
+//            gson.toJson(lineModels);
+//
+//            Map<String, Object> map = new HashMap<>();
+//            map.put("text", text.getText());
+//            map.put("lines", lineModels);
+//            map.put("path", "");
+//            map.put("orientation", 0);
+//
+//            onTextRead(new Gson().toJson(map));
+//        }
 
     }
 
@@ -610,61 +610,47 @@ class CameraView implements PlatformView, CameraViewInterface, MethodChannel.Met
 
     public void processImageFromPath(final String p, final MethodChannel.Result flutterResult) {
         Log.println(Log.INFO, "ArtemisCameraUtil", "ProcessingImageFromPath");
-        try {
-//        Bitmap bitmap = BitmapFactory.decodeFile(p);
-//
-////            InputImage image = InputImage.fromBitmap(bitmap, 0);
-//            InputImage image = InputImage.fromBitmap(bitmap, 0);
-//
-////            InputImage image = InputImage.fromFilePath(context, Uri.fromFile(new File(p)));
-//
+//        try {
+//            InputImage image = InputImage.fromFilePath(context, Uri.fromFile(new File(p)));
 //            TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
-//        ExifInterface exif = new ExifInterface(p);
-//        int rotation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
-//        int rotationInDegrees = exifToDegrees(rotation);
 //
-//        Bitmap bitmap = BitmapFactory.decodeFile(p);
-//        final InputImage image = InputImage.fromBitmap(bitmap, rotationInDegrees);
-            InputImage image = InputImage.fromFilePath(context, Uri.fromFile(new File(p)));
-            TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+//            recognizer.process(image)
+//                    .addOnSuccessListener(visionText -> processText(visionText, p, flutterResult))
+//                    .addOnFailureListener(e -> flutterResult.error("-1", e.getMessage(), ""));
 
-            recognizer.process(image)
-                    .addOnSuccessListener(visionText -> processText(visionText, p, flutterResult))
-                    .addOnFailureListener(e -> flutterResult.error("-1", e.getMessage(), ""));
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
     }
 
-    public void processText(Text text, String path, final MethodChannel.Result flutterResult) {
-        Log.println(Log.INFO, "ArtemisCameraUtil", "processText");
-        if(text.getText().trim().isEmpty())return;
-
-        List<LineModel> lineModels = new ArrayList<>();
-        for (Text.TextBlock b : text.getTextBlocks()) {
-
-            for (Text.Line line : b.getLines()) {
-                LineModel lineModel = new LineModel(line.getText());
-                for (Point p : Objects.requireNonNull(line.getCornerPoints())) {
-                    lineModel.cornerPoints.add(new CornerPointModel(p.x, p.y));
-                }
-                lineModels.add(lineModel);
-            }
-        }
-//        Gson gson = new Gson();
-//        gson.toJson(lineModels);
-
-        Map<String, Object> map = new HashMap<>();
-        map.put("text", text.getText());
-        map.put("lines", lineModels);
-        map.put("path", path);
-        map.put("orientation", 0);
-        flutterResult.success(new Gson().toJson(map));
-
-
-
-    }
+//    public void processText(Text text, String path, final MethodChannel.Result flutterResult) {
+//        Log.println(Log.INFO, "ArtemisCameraUtil", "processText");
+//        if(text.getText().trim().isEmpty())return;
+//
+//        List<LineModel> lineModels = new ArrayList<>();
+//        for (Text.TextBlock b : text.getTextBlocks()) {
+//
+//            for (Text.Line line : b.getLines()) {
+//                LineModel lineModel = new LineModel(line.getText());
+//                for (Point p : Objects.requireNonNull(line.getCornerPoints())) {
+//                    lineModel.cornerPoints.add(new CornerPointModel(p.x, p.y));
+//                }
+//                lineModels.add(lineModel);
+//            }
+//        }
+////        Gson gson = new Gson();
+////        gson.toJson(lineModels);
+//
+//        Map<String, Object> map = new HashMap<>();
+//        map.put("text", text.getText());
+//        map.put("lines", lineModels);
+//        map.put("path", path);
+//        map.put("orientation", 0);
+//        flutterResult.success(new Gson().toJson(map));
+//
+//
+//
+//    }
 
     private static int exifToDegrees(int exifOrientation) {
         if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_90) {

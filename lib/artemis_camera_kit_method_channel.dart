@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -36,7 +37,7 @@ class MethodChannelArtemisCameraKit extends ArtemisCameraKitPlatform {
     return methodChannel.invokeMethod<void>('initCamera', {
       "hasBarcodeReader": hasBarcodeReader,
       "initFlashModeID": initFlash.id,
-      "modeID": mode.id,
+      "modeID":(Platform.isAndroid&&mode == UsageMode.ocrReader)?UsageMode.camera: mode.id,
       "fill": fill,
       "barcodeTypeID": barcodeType.id,
       "cameraTypeID": cameraType.id
@@ -70,6 +71,7 @@ class MethodChannelArtemisCameraKit extends ArtemisCameraKitPlatform {
 
   @override
   Future<OcrData?> processImageFromPath([String path = ""]) async {
+    if(Platform.isAndroid) return null;
     String? ocrJson = await methodChannel.invokeMethod<String?>('processImageFromPath', {"path": path});
     if (ocrJson == null) return null;
     try {

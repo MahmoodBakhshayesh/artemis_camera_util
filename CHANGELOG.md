@@ -14,4 +14,7 @@ process form path fix
 ## 0.0.5
 fix log info
 
+## 0.0.6
+no OCR version
+
 
