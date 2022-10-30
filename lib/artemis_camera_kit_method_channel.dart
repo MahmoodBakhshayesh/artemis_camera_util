@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-
 import 'artemis_camera_kit_platform_interface.dart';
+import 'package:image/image.dart';
 
 /// An implementation of [ArtemisCameraKitPlatform] that uses method channels.
 class MethodChannelArtemisCameraKit extends ArtemisCameraKitPlatform {
@@ -71,12 +71,42 @@ class MethodChannelArtemisCameraKit extends ArtemisCameraKitPlatform {
 
   @override
   Future<OcrData?> processImageFromPath([String path = ""]) async {
+    bool validPath = await File.fromUri(Uri(path: path)).exists();
+    if(!validPath) throw Exception("Invalid Image Path");
+
     if(Platform.isAndroid) return null;
     String? ocrJson = await methodChannel.invokeMethod<String?>('processImageFromPath', {"path": path});
     if (ocrJson == null) return null;
     try {
       OcrData ocrData = OcrData.fromJson(jsonDecode(ocrJson));
       return ocrData;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<BarcodeData?> getBarcodesFromImage([String path = ""]) async {
+    bool validPath = await File.fromUri(Uri(path: path)).exists();
+    if(!validPath) throw Exception("Invalid Image Path");
+
+    if(Platform.isAndroid) return null;
+    String? barJson = await methodChannel.invokeMethod<String?>('getBarcodesFromPath', {"path": path});
+    if (barJson == null) return null;
+    try {
+      BarcodeData barData = BarcodeData.fromJson(jsonDecode(barJson));
+      if(barData.barcodes.isEmpty){
+        final Image? capturedImage = decodeImage(await File(path).readAsBytes());
+        final Image orientedImage = bakeOrientation(capturedImage!);
+        await File(path).writeAsBytes(encodeJpg(orientedImage));
+        String? barJsonRotated =
+        await methodChannel.invokeMethod<String?>('getBarcodesFromPath', {"path": path});
+        if (barJsonRotated == null) return null;
+        BarcodeData ro = BarcodeData.fromJson(jsonDecode(barJsonRotated));
+        return ro;
+      }else {
+        return barData;
+      }
     } catch (e) {
       return null;
     }
@@ -92,4 +122,16 @@ class MethodChannelArtemisCameraKit extends ArtemisCameraKitPlatform {
   Future<void> setMethodCallHandler(Future Function(MethodCall call)? handler) async {
     methodChannel.setMethodCallHandler(handler);
   }
+
+  @override
+  Future<DataInImage> getDataFromImage(String path) async {
+    bool validPath = await File.fromUri(Uri(path: path)).exists();
+    if(!validPath) throw Exception("Invalid Image Path");
+
+    OcrData? ocr = await processImageFromPath(path);
+    BarcodeData? barcode = await getBarcodesFromImage(path);
+    return DataInImage(ocr, barcode);
+  }
+
+
 }

@@ -21,6 +21,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final ArtemisCameraKitController cameraKitController = ArtemisCameraKitController();
   List<String> barcodes = [];
+  String address ="";
   @override
   void initState() {
     super.initState();
@@ -85,18 +86,29 @@ class _MyAppState extends State<MyApp> {
                       },
                       child: const Text("Resume")),
                   TextButton(
+                    onLongPress: (){
+                      cameraKitController.getBarcodesFromImage(address).then((value) {
+                        if(value==null){
+                          print("NULL Bar");
+                        }else {
+                          print(value.toJson());
+                        }
+                      });
+                    },
                       onPressed: () {
                         cameraKitController.takePicture().then((imgPath){
                           log(imgPath.toString());
-
+                          // address = imgPath;
                           if(imgPath!=null) {
-                            cameraKitController.processImageFromPath(imgPath).then((value) {
+                            address = imgPath;
+                            cameraKitController.getDataFromImage(imgPath).then((value) {
                               if(value==null){
                                 print("NULL OCR");
                               }else {
                                 print(value.toJson());
                               }
                             });
+
                           }
                         });
                       },
@@ -105,13 +117,13 @@ class _MyAppState extends State<MyApp> {
               ),
                Expanded(child: ArtemisCameraKitView(
                 mode: UsageMode.barcodeScanner,
-                barcodeType: BarcodeType.itf,
+                // barcodeType: BarcodeType.itf,
                 onBarcodeRead: (b){
-                  if(!barcodes.contains(b) && b.length==10){
-                    barcodes.add(b);
-                  }
-                  print(barcodes);
-                  print(barcodes.length);
+                  // if(!barcodes.contains(b) && b.length==10){
+                  //   barcodes.add(b);
+                  // }
+                  // print(barcodes);
+                  // print(barcodes.length);
                 },
               ))
             ],

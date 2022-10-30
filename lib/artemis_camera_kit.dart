@@ -52,7 +52,16 @@ class ArtemisCameraKit {
     return ArtemisCameraKitPlatform.instance.processImageFromPath(path);
   }
 
+
+  Future<BarcodeData?> getBarcodesFromImage([String path = ""]) {
+    return ArtemisCameraKitPlatform.instance.getBarcodesFromImage(path);
+  }
+
   Future<void> setMethodCallHandler({required Future<dynamic> Function(MethodCall call)? handler}) {
     return ArtemisCameraKitPlatform.instance.setMethodCallHandler(handler);
+  }
+
+  Future<DataInImage> getDataFromImage(String path) {
+    return ArtemisCameraKitPlatform.instance.getDataFromImage(path);
   }
 }

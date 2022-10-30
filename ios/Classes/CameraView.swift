@@ -15,7 +15,7 @@ class CameraView: NSObject, FlutterPlatformView, AVCapturePhotoCaptureDelegate, 
     private var _view: UIView
     let channel: FlutterMethodChannel
     let frame: CGRect
-//    var hasBarcodeReader:Bool!
+    //    var hasBarcodeReader:Bool!
     var imageSavePath:String!
     var isCameraVisible:Bool! = true
     var initCameraFinished:Bool! = false
@@ -112,6 +112,11 @@ class CameraView: NSObject, FlutterPlatformView, AVCapturePhotoCaptureDelegate, 
         case "processImageFromPath":
             let path = (myArgs?["path"] as! String);
             self.processImageFromPath(path: path, flutterResult:result)
+            break
+        case "getBarcodesFromPath":
+            let path = (myArgs?["path"] as! String);
+            let orientation = (myArgs?["orientation"] as! Int?);
+            self.getBarcodeFromPath(path: path, flutterResult:result,orient: orientation)
             break
         case "dispose":
             self.getCameraPermission(flutterResult: result)
@@ -229,7 +234,7 @@ class CameraView: NSObject, FlutterPlatformView, AVCapturePhotoCaptureDelegate, 
             if session.canAddOutput(photoOutput!){
                 session.addOutput(photoOutput!)
             }
-
+            
             
             
             
@@ -357,12 +362,59 @@ class CameraView: NSObject, FlutterPlatformView, AVCapturePhotoCaptureDelegate, 
             }
             let visionImage = VisionImage(image: image!)
             visionImage.orientation = image!.imageOrientation
-            print("Go TO proccessImage")
-            proccessImage(visionImage: visionImage, selectedImagePath: path)
+            print("Go TO processImage")
+            processImage(visionImage: visionImage, selectedImagePath: path)
         } catch {
             print("Error loading image : \(error)")
         }
         
+    }
+    
+    
+    
+    func getBarcodeFromPath(path:String,flutterResult:  @escaping FlutterResult,orient:Int?){
+        let fileURL = URL(fileURLWithPath: path)
+        do {
+            self.flutterResultOcr = flutterResult
+            let imageData = try Data(contentsOf: fileURL)
+            let image = UIImage(data: imageData)
+            if image == nil {
+                return
+            }
+            let visionImage = VisionImage(image: image!)
+            if(orient==nil){
+                let ori = image?.imageOrientation
+                print("Image Orientation is \(ori?.rawValue)")
+//                visionImage.orientation = imageOrientation(fromDevicePosition: cameraPosition)
+                visionImage.orientation = ori!
+            }else{
+                visionImage.orientation = UIImage.Orientation.init(rawValue: orient!)!
+            }
+            
+            print("Go TO processImage")
+            processBarcodeImage(visionImage: visionImage, selectedImagePath: path,flutterResult:flutterResult)
+        } catch {
+            print("Error loading image : \(error)")
+        }
+        
+    }
+    
+    func imageOrientation2(
+      deviceOrientation: UIDeviceOrientation,
+      cameraPosition: AVCaptureDevice.Position
+    ) -> UIImage.Orientation {
+      switch deviceOrientation {
+      case .portrait:
+        return cameraPosition == .front ? .leftMirrored : .right
+      case .landscapeLeft:
+        return cameraPosition == .front ? .downMirrored : .up
+      case .portraitUpsideDown:
+        return cameraPosition == .front ? .rightMirrored : .left
+      case .landscapeRight:
+        return cameraPosition == .front ? .upMirrored : .down
+      case .faceDown, .faceUp, .unknown:
+        return .up
+      }
     }
     
     
@@ -505,12 +557,12 @@ class CameraView: NSObject, FlutterPlatformView, AVCapturePhotoCaptureDelegate, 
                     onBarcodeRead(barcode: barcode.rawValue!)
                 }
             }
-//
-//            if(false) {
-//                let visionImage = VisionImage(buffer: sampleBuffer)
-//                visionImage.orientation = orientation
-//                proccessImage(visionImage: visionImage)
-//            }
+            //
+            //            if(false) {
+            //                let visionImage = VisionImage(buffer: sampleBuffer)
+            //                visionImage.orientation = orientation
+            //                processImage(visionImage: visionImage)
+            //            }
         }else if(usageMode == 2){
             if(textRecognizer != nil) {
                 let visionImage = VisionImage(buffer: sampleBuffer)
@@ -546,7 +598,7 @@ class CameraView: NSObject, FlutterPlatformView, AVCapturePhotoCaptureDelegate, 
                         self.onTextRead(text: "", values: [], path: "", orientation:  nil)
                     }
                     
-                
+                    
                     
                 } catch {
                     print("can't fetch result")
@@ -560,7 +612,51 @@ class CameraView: NSObject, FlutterPlatformView, AVCapturePhotoCaptureDelegate, 
         channel.invokeMethod("onBarcodeRead", arguments: barcode)
     }
     
-    
+    func processBarcodeImage(visionImage: VisionImage, image: UIImage? = nil, selectedImagePath : String? = nil,flutterResult:  @escaping FlutterResult) {
+        
+//        let orientation = imageOrientation(fromDevicePosition: cameraPosition)
+//        visionImage.orientation = orientation
+        print("Looking In barcode with orinet \(visionImage.orientation.rawValue)")
+        let format = BarcodeFormat.all
+        let barcodeOptions = BarcodeScannerOptions(formats: format)
+        
+        let bs = BarcodeScanner.barcodeScanner(options: barcodeOptions)
+        
+        visionImage.orientation = UIImage.Orientation.up
+        
+        var imageBarcodeObjects: [BarcodeObject] = []
+        bs.process(visionImage) { features, error in
+            guard error == nil, let features = features else {
+                print("error happended ")
+                return
+            }
+            for barcode in features {
+                let barcodeObj : BarcodeObject = BarcodeObject()
+                let corners = barcode.cornerPoints
+                
+                
+                for c in corners ?? [] {
+                    barcodeObj.cornerPoints.append(CornerPointModel(x: c.cgPointValue.x, y: c.cgPointValue.y))
+                }
+                
+                barcodeObj.rawValue = barcode.rawValue;
+                barcodeObj.orientation = visionImage.orientation.rawValue;
+                barcodeObj.type = barcode.valueType.rawValue;
+                barcodeObj.value = barcode.displayValue;
+                
+                imageBarcodeObjects.append(barcodeObj)
+            }
+            
+            let data = BarcodeData(path: "", orientation: visionImage.orientation.rawValue, barcodes:imageBarcodeObjects)
+            let jsonEncoder = JSONEncoder()
+            let jsonData = try! jsonEncoder.encode(data)
+            let json = String(data: jsonData, encoding: String.Encoding.utf8)
+            flutterResult(json)
+        }
+
+        
+        
+    }
     
     func onTextRead(text: String, values: [LineModel], path: String?, orientation: Int?) {
         let data = OcrData(text: text, path: path, orientation: orientation, lines: values)
@@ -570,7 +666,18 @@ class CameraView: NSObject, FlutterPlatformView, AVCapturePhotoCaptureDelegate, 
         channel.invokeMethod("onTextRead", arguments: json)
     }
     
-    func proccessImage(visionImage: VisionImage, image: UIImage? = nil, selectedImagePath : String? = nil) {
+    func textRead(text: String, values: [LineModel], path: String?, orientation: Int?) {
+        
+        
+        let data = OcrData(text: text, path: path, orientation: orientation, lines: values)
+        let jsonEncoder = JSONEncoder()
+        let jsonData = try! jsonEncoder.encode(data)
+        let json = String(data: jsonData, encoding: String.Encoding.utf8)
+        flutterResultOcr(json)
+    }
+    
+    
+    func processImage(visionImage: VisionImage, image: UIImage? = nil, selectedImagePath : String? = nil) {
         if textRecognizer != nil {
             
             var path : String?
@@ -623,17 +730,6 @@ class CameraView: NSObject, FlutterPlatformView, AVCapturePhotoCaptureDelegate, 
     
     
     
-    func textRead(text: String, values: [LineModel], path: String?, orientation: Int?) {
-        
-        
-        let data = OcrData(text: text, path: path, orientation: orientation, lines: values)
-        let jsonEncoder = JSONEncoder()
-        let jsonData = try! jsonEncoder.encode(data)
-        let json = String(data: jsonData, encoding: String.Encoding.utf8)
-        flutterResultOcr(json)
-    }
-    
-    
     
     
     
@@ -666,3 +762,19 @@ class CornerPointModel: Codable {
     var x:CGFloat
     var y:CGFloat
 }
+
+class BarcodeObject: Codable {
+    var rawValue:String? = ""
+    var value:String? = ""
+    var type:Int? = 0
+    var orientation: Int?
+    var cornerPoints : [CornerPointModel] = []
+}
+
+
+struct BarcodeData: Codable {
+    var path: String?
+    var orientation: Int?
+    var barcodes: [BarcodeObject]=[]
+}
+

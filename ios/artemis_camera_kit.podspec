@@ -24,5 +24,7 @@ A new Flutter project.
   s.dependency 'GoogleMLKit/BarcodeScanning'
   s.dependency 'GoogleMLKit/TextRecognition'
   s.dependency 'MTBBarcodeScanner'
+#   s.dependency 'GoogleMLKit/BarcodeScanning', '3.2.0'
+
   s.static_framework = true
 end
