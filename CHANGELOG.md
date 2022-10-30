@@ -17,4 +17,7 @@ fix log info
 ## 0.0.6
 no OCR version
 
+## 0.0.7
+image and data from path 
+
 
