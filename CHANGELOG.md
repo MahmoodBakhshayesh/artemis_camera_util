@@ -20,4 +20,7 @@ no OCR version
 ## 0.0.7
 image and data from path 
 
+## 0.0.8
+readme fix
+
 

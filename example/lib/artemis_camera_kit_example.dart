@@ -21,7 +21,8 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final ArtemisCameraKitController cameraKitController = ArtemisCameraKitController();
   List<String> barcodes = [];
-  String address ="";
+  String address = "";
+
   @override
   void initState() {
     super.initState();
@@ -67,12 +68,12 @@ class _MyAppState extends State<MyApp> {
                       child: const Text("init Camera")),
                   TextButton(
                       onPressed: () {
-                        cameraKitController.changeFlashMode(mode:FlashMode.on);
+                        cameraKitController.changeFlashMode(mode: FlashMode.on);
                       },
                       child: const Text("F on")),
                   TextButton(
                       onPressed: () {
-                        cameraKitController.changeFlashMode(mode:FlashMode.off);
+                        cameraKitController.changeFlashMode(mode: FlashMode.off);
                       },
                       child: const Text("F off")),
                   TextButton(
@@ -83,47 +84,46 @@ class _MyAppState extends State<MyApp> {
                   TextButton(
                       onPressed: () {
                         cameraKitController.resumeCamera();
+
                       },
                       child: const Text("Resume")),
                   TextButton(
-                    onLongPress: (){
-                      cameraKitController.getBarcodesFromImage(address).then((value) {
-                        if(value==null){
-                          print("NULL Bar");
-                        }else {
-                          print(value.toJson());
-                        }
-                      });
-                    },
+                      onLongPress: () {
+                        cameraKitController.getBarcodesFromImage(address).then((value) {
+                          if (value == null) {
+                            print("NULL Bar");
+                          } else {
+                            print(value.toJson());
+                          }
+                        });
+                      },
                       onPressed: () {
-                        cameraKitController.takePicture().then((imgPath){
+                        cameraKitController.takePicture().then((imgPath) {
                           log(imgPath.toString());
                           // address = imgPath;
-                          if(imgPath!=null) {
+                          if (imgPath != null) {
                             address = imgPath;
                             cameraKitController.getDataFromImage(imgPath).then((value) {
-                              if(value==null){
+                              if (value == null) {
                                 print("NULL OCR");
-                              }else {
+                              } else {
                                 print(value.toJson());
+                                print(value.barcodeData?.barcodes.length);
                               }
                             });
-
                           }
                         });
                       },
                       child: const Text("Take Pic")),
                 ],
               ),
-               Expanded(child: ArtemisCameraKitView(
-                mode: UsageMode.barcodeScanner,
-                // barcodeType: BarcodeType.itf,
-                onBarcodeRead: (b){
-                  // if(!barcodes.contains(b) && b.length==10){
-                  //   barcodes.add(b);
-                  // }
-                  // print(barcodes);
-                  // print(barcodes.length);
+              Expanded(
+                  child: ArtemisCameraKitView(
+                fill: true,
+                initFlash: FlashMode.off,
+                mode: UsageMode.ocrReader,
+                onOcrRead: (o) {
+                  log("Text Read ${o.text}");
                 },
               ))
             ],
