@@ -23,4 +23,9 @@ image and data from path
 ## 0.0.8
 readme fix
 
+## 0.0.9
+ocr android no barcode
+
+## 0.0.10
+update packages
 

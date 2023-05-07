@@ -103,12 +103,12 @@ class _MyAppState extends State<MyApp> {
                           // address = imgPath;
                           if (imgPath != null) {
                             address = imgPath;
-                            cameraKitController.getDataFromImage(imgPath).then((value) {
+                            cameraKitController.processImageFromPath(imgPath).then((value) {
                               if (value == null) {
                                 print("NULL OCR");
                               } else {
                                 print(value.toJson());
-                                print(value.barcodeData?.barcodes.length);
+                                // print(value.barcodeData?.barcodes.length);
                               }
                             });
                           }

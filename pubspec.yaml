@@ -1,6 +1,6 @@
 name: artemis_camera_kit
 description: A Flutter Plugin Using Camera to Scan Barcodes/Taking Pictures/Proccess OCR Data.
-version: 0.0.8
+version: 0.0.10
 homepage: https://github.com/MahmoodBakhshayesh/artemis_camera_util
 
 environment:
@@ -11,8 +11,8 @@ dependencies:
   flutter:
     sdk: flutter
   plugin_platform_interface: ^2.0.2
-  visibility_detector: ^0.3.3
-  image: ^3.2.2
+  visibility_detector: ^0.4.0+2
+  image: ^4.0.17
 
 dev_dependencies:
   flutter_test:

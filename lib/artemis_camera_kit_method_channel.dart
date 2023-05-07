@@ -37,7 +37,8 @@ class MethodChannelArtemisCameraKit extends ArtemisCameraKitPlatform {
     return methodChannel.invokeMethod<void>('initCamera', {
       "hasBarcodeReader": hasBarcodeReader,
       "initFlashModeID": initFlash.id,
-      "modeID":(Platform.isAndroid&&mode == UsageMode.ocrReader)?UsageMode.camera: mode.id,
+      // "modeID":(Platform.isAndroid&&mode == UsageMode.ocrReader)?UsageMode.camera: mode.id,
+      "modeID": mode.id,
       "fill": fill,
       "barcodeTypeID": barcodeType.id,
       "cameraTypeID": cameraType.id
@@ -74,7 +75,7 @@ class MethodChannelArtemisCameraKit extends ArtemisCameraKitPlatform {
     bool validPath = await File.fromUri(Uri(path: path)).exists();
     if(!validPath) throw Exception("Invalid Image Path");
 
-    if(Platform.isAndroid) return null;
+    // if(Platform.isAndroid) return null;
     String? ocrJson = await methodChannel.invokeMethod<String?>('processImageFromPath', {"path": path});
     if (ocrJson == null) return null;
     try {
@@ -90,7 +91,7 @@ class MethodChannelArtemisCameraKit extends ArtemisCameraKitPlatform {
     bool validPath = await File.fromUri(Uri(path: path)).exists();
     if(!validPath) throw Exception("Invalid Image Path");
 
-    if(Platform.isAndroid) return null;
+    // if(Platform.isAndroid) return null;
     String? barJson = await methodChannel.invokeMethod<String?>('getBarcodesFromPath', {"path": path});
     if (barJson == null) return null;
     try {
