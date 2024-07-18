@@ -121,7 +121,10 @@ class _MyAppState extends State<MyApp> {
                   child: ArtemisCameraKitView(
                 fill: true,
                 initFlash: FlashMode.off,
-                mode: UsageMode.ocrReader,
+                mode: UsageMode.barcodeScanner,
+                onBarcodeRead: (c){
+                  log("barcode Read ${c}");
+                },
                 onOcrRead: (o) {
                   log("Text Read ${o.text}");
                 },

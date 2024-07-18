@@ -29,3 +29,9 @@ ocr android no barcode
 ## 0.0.10
 update packages
 
+## 0.0.11
+barcode scanner work
+
+## 0.0.12
+barcode scanner work fix
+

@@ -1,9 +1,9 @@
 PODS:
   - artemis_camera_kit (0.0.1):
     - Flutter
+    - GoogleDataTransport (= 9.1.2)
     - GoogleMLKit/BarcodeScanning
     - GoogleMLKit/TextRecognition
-    - MTBBarcodeScanner
   - Flutter (1.0.0)
   - GoogleDataTransport (9.1.2):
     - GoogleUtilities/Environment (~> 7.2)
@@ -65,7 +65,6 @@ PODS:
     - MLImage (= 1.0.0-beta1)
     - MLKitCommon (~> 4.0)
     - Protobuf (~> 3.12)
-  - MTBBarcodeScanner (5.0.11)
   - nanopb (2.30908.0):
     - nanopb/decode (= 2.30908.0)
     - nanopb/encode (= 2.30908.0)
@@ -92,7 +91,6 @@ SPEC REPOS:
     - MLKitTextRecognition
     - MLKitTextRecognitionCommon
     - MLKitVision
-    - MTBBarcodeScanner
     - nanopb
     - PromisesObjC
     - Protobuf
@@ -104,7 +102,7 @@ EXTERNAL SOURCES:
     :path: Flutter
 
 SPEC CHECKSUMS:
-  artemis_camera_kit: fee626d7080bdce23dabf135f721acdf534b825e
+  artemis_camera_kit: ff4e38ca2d7489c0330d2a1802634c0f2ad369f6
   Flutter: f04841e97a9d0b0a8025694d0796dd46242b2854
   GoogleDataTransport: 629c20a4d363167143f30ea78320d5a7eb8bd940
   GoogleMLKit: db5007bddb78dedf52b60f4038d32e7bd006b519
@@ -118,11 +116,10 @@ SPEC CHECKSUMS:
   MLKitTextRecognition: 42eecbc7d269d3c6a2d5ff8f3d55f55c1a30932c
   MLKitTextRecognitionCommon: 1028c20111848c08c82deba94a09ac352725c865
   MLKitVision: 53b8f93a864c8d9740f7f09041911f2e64150ec8
-  MTBBarcodeScanner: f453b33c4b7dfe545d8c6484ed744d55671788cb
   nanopb: a0ba3315591a9ae0a16a309ee504766e90db0c96
   PromisesObjC: 68159ce6952d93e17b2dfe273b8c40907db5ba58
   Protobuf: 3724efa50cb2846d7ccebc8691c574e85fd74471
 
 PODFILE CHECKSUM: fe0e1ee7f3d1f7d00b11b474b62dd62134535aea
 
-COCOAPODS: 1.11.3
+COCOAPODS: 1.14.3
